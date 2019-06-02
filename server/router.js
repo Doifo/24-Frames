@@ -19,28 +19,48 @@ let router = express.Router()
 
 // movieSave()
 
-function getId(resolved, rejected) {
-  fs.readFile('../static/id.txt', function (err, data) {
-    if (err) {
-      rejected(err)
-    } else {
-      resolved(data.toString())
-    }
+function getId() {
+
+  let p = new Promise(function (resolved, rejected) {
+    fs.readFile('../static/id.txt', function (err, data) {
+      if (err) {
+        rejected(err)
+      } else {
+        resolved(data.toString())
+      }
+    })
   })
+
+  return p
+
 }
 
-function addId(resolved, rejected) {
-  let p = new Promise(getId)
-  p.then(data => {
+function addId(data) {
+
+  let p = new Promise(function (resolved, rejected) {
     fs.writeFile('../static/id.txt', parseInt(data) + 1, function (err) {
       if (err) {
         rejected(err)
       } else {
-        resolved('success')
+        resolved('add success')
       }
     })
-
   })
+
+  return p
+}
+
+function mkDir(name) {
+  let p = new Promise(function (resolved, rejected) {
+    fs.mkdir('../static/articlePic/' + name, function (err) {
+      if (err) {
+        rejected(err)
+      } else {
+        resolved('../static/articlePic/' + name)
+      }
+    })
+  })
+  return p
 }
 
 
@@ -170,20 +190,33 @@ router.post('/upload', function (req, res) {
 })
 
 router.post('/upload-article-pic', function (req, res) {
-  let p1 = new Promise(addId)
-  let p2 = new Promise(getId)
 
-  p1.then(() => {
-    return p2
+  getId().then(data => {
+    return addId(data)
+  }).then(date => {
+    console.log(date)
+    return getId()
   }).then(data => {
-    fs.mkdir('../static/articlePic/'+ data.toString() ,function(err){
-      if(err){
-        console.log(err)
-      }else{
-        res.send('success')
-      } 
+    return mkDir(data)
+  }).then(path => {
+
+    let returnData = {}
+    var form = new formidable.IncomingForm()
+    form.uploadDir = path
+    form.keepExtensions = true
+
+    form.parse(req,function(err, fields, files){
+      for(let key in files){
+        let path = files[key].path.slice(2)
+        path = path.replace(/\\/g,"/")
+        returnData[key] = path
+      }
+
+      res.send(returnData)
     })
   })
+
+
 
 })
 

@@ -44,6 +44,7 @@
       </el-tab-pane>
       <el-tab-pane label="推文" name="second">
         <mavon-editor
+        ref="mavonEditor"
           v-model="evaluation"
           class="mavon-editor"
           @imgAdd="$imgAdd"
@@ -84,17 +85,35 @@ export default {
       desc: "",
       submitted: false,
       loading: false,
-      img_file:{}
+      img_file: {}
     };
   },
   methods: {
     $imgAdd(pos, $file) {
       // 缓存图片信息
-      console.log(pos,$file)
+      console.log(pos, $file);
       this.img_file[pos] = $file;
     },
     $imgDel(pos) {
       delete this.img_file[pos];
+    },
+    uploadImg($e) {
+      
+      let formdata = new FormData();
+      for (var _img in this.img_file) {
+        formdata.append(_img, this.img_file[_img]);
+      }
+
+      axios
+        .post(global.baseURL + "/upload-article-pic", formdata)
+        .then(response => {
+          console.log(response.data);
+          let data = response.data
+          for (var key in data) {
+            // $vm.$img2Url 详情见本页末尾
+            this.$refs.mavonEditor.$img2Url(key, data[key]);
+          }
+        });
     },
     handleChange(file, fileList) {
       this.fileList.push(file);
@@ -103,8 +122,6 @@ export default {
       this.fileList.pop();
     },
     submitUpload() {
-      console.log(this.fileList.length == 0);
-
       if (
         this.title == "" ||
         this.desc == "" ||
@@ -123,7 +140,15 @@ export default {
       let date = new Date(Date.now());
       let today =
         date.getFullYear() + "-" + date.getMonth() + "-" + date.getDate();
+      this.loading = true;
 
+      let _that = this;
+      let p = new Promise(function(res,rej){
+        _that.uploadImg()
+        res('success')
+      })
+
+    p.then(data => {
       let param = new FormData();
       param.append("pic", params.file);
       param.append("title", this.title);
@@ -133,7 +158,7 @@ export default {
       param.append("email", "123456@gmail.com");
       param.append("date", today);
 
-      this.loading = true;
+      
       axios.post(global.baseURL + "/upload", param).then(response => {
         console.log(response);
         if (response.data == "success") {
@@ -141,6 +166,8 @@ export default {
           this.loading = false;
         }
       });
+    })
+      
     }
   },
   components: {
