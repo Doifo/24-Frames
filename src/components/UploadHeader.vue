@@ -2,7 +2,7 @@
   <div id="header">
     <div>
       <router-link to="/homepage"><button class="header-button">首页</button></router-link>
-      <button class="header-button">搜索</button>
+      <router-link to="/search"><button class="header-button">搜索</button></router-link>
       <button class="header-button">我</button>
     </div>
     <!-- <div id="search-icon-box" @click="showSM" v-show="!showIM">

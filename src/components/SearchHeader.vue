@@ -2,7 +2,8 @@
   <div id="header">
     <div>
       <router-link to="/homepage"><button class="header-button">首页</button></router-link>
-      <button class="header-button">上传</button>
+      <router-link to="/upload"><button class="header-button">上传</button></router-link>
+
       <button class="header-button">我</button>
     </div>
     <div id="search-icon-box" @click="showSM" v-show="!showIM">

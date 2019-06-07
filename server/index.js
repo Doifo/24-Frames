@@ -12,6 +12,8 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
 app.use('/static',express.static('../dist/static'))
+app.use('/toSave',express.static('../toSave'))
+
 
 app.use(new cors())
 app.use(router)

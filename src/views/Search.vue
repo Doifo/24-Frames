@@ -1,45 +1,54 @@
 <template>
   <div id="search" v-loading="loading" element-loading-background="rgba(0, 0, 0, 0.8)">
-    <div id="mainModel">
-      <search-header @showSM="showSM" :showIM="showIM"></search-header>
+    <div id="mainModel" class="blur">
+      <common-header  @showMenu="toShowMenu"></common-header>
       <div id="inputModel" v-show="showIM">
-        <input
+        <p style="margin-left:50px;margin-right:50px;"><input
           type="text"
           id="input-model-input"
           placeholder="Search..."
           @keydown="search"
           v-model="searchKey"
-        >
+        ></p>
         <p class="input-model-alert" ref="alert">Hit enter to search</p>
       </div>
 
       <div id="resultModel" v-show="!showIM">
-        <p id="searchResult">搜索结果</p>
-        <div id="picModel">
-          <div
-            class="pic"
-            v-for="movie in searchedMovies"
-            :key="movie.title"
-            :style="'background-image:url('+movie.url+')'"
-            @mouseover="showInfor"
-            @mouseout="hideInfor"
-          >
-            <div class="infor-box">
-              <p>{{movie.title}}</p>
-              <p>{{movie.date}}</p>
+        <p id="searchResult" v-show="!noResult"><img src="/static/search.png" alt=""><span @click="showSM"> 搜索</span></p>
+        <div id="picModel" v-show="!noResult">
+          <router-link class="pic-router" v-for="movie in searchedMovies" :key="movie.title" :to="'/detail/' + movie._id"  target="_blank">
+            <div
+              class="pic"
+              :style="'background-image:url('+movie.url+')'"
+              @mouseover="showInfor"
+              @mouseout="hideInfor"
+            >
+              <div class="infor-box">
+                <p>{{movie.title}}</p>
+                <p>{{movie.date}}</p>
+              </div>
             </div>
+          </router-link>
+        </div>
+
+        <div id="nothing-box" v-show="noResult">
+          <div style="display:flex;align-items:center">
+            <img src="/static/nothing.png" alt> 没有您要寻找的内容
           </div>
+          <p style="font-weight:bold;cursor:pointer" @click="showSM">再次搜索</p>
         </div>
       </div>
     </div>
 
-    <div id="searchModel" ref="sm">
+    <div id="searchModel" class="blur" ref="sm">
       <div id="innerModel">
         <div class="icon-box">
           <img @click="closeSM" class="icon" src="/static/close.png">
         </div>
         <div id="search-input-p">
-          <input
+          <p style="margin-left:50px;margin-right:50px;">
+
+            <input
             type="text"
             id="search-input"
             ref="searchInputP"
@@ -47,19 +56,22 @@
             @keydown="search"
             v-model="searchKey"
           >
+          </p>
 
           <p class="alert" ref="alert">Hit enter to search</p>
         </div>
       </div>
     </div>
+
+    <header-menu ref="menu"></header-menu>
   </div>
 </template>
 
 <script>
-import SearchHeader from "@/components/SearchHeader";
+import HeaderMenu from '@/components/HeaderMenu'
+import CommonHeader from "@/components/CommonHeader";
 import axios from "axios";
-import global from '@/global/index.js'
-
+import global from "@/global/index.js";
 
 export default {
   name: "",
@@ -69,24 +81,29 @@ export default {
       searchKey: "",
       searchedMovies: [],
       showIM: true,
-      loading: false
+      loading: false,
+      noResult: false
     };
   },
   components: {
-    SearchHeader
+    CommonHeader,
+    HeaderMenu,
   },
   methods: {
+    toShowMenu(){
+      this.$refs.menu.showMenu()
+    },
     showInfor(e) {
       e.target.childNodes[0].style.left = "0";
     },
-    hideInfor(e){
+    hideInfor(e) {
       e.target.childNodes[0].style.left = "-100%";
     },
     showSM() {
       this.$refs.sm.style = "z-index:10";
       this.$refs.sm.style.opacity = "1";
       // this.$refs.searchInputP.classList.add('search-input-show')
-      this.$refs.searchInputP.style.width = "80%";
+      this.$refs.searchInputP.style.width = "100%";
       this.$refs.alert.classList.add("alert-show");
     },
     closeSM() {
@@ -102,16 +119,26 @@ export default {
       }
       this.loading = true;
       axios
-        .get( global.baseURL + "/findByTitle?title=" + this.searchKey)
+        .get(global.baseURL + "/findByTitle?title=" + this.searchKey)
         .then(response => {
           this.loading = false;
-          this.searchedMovies = response.data;
+          this.searchedMovies = response.data.data;
+          if (this.searchedMovies.length == 0) {
+            this.noResult = true;
+          } else {
+            this.noResult = false;
+          }
+
           this.searchKey = "";
           this.closeSM();
           this.showIM = false;
         });
     }
+  },
+  mounted(){
+    
   }
+  
 };
 </script>
 
@@ -127,20 +154,15 @@ export default {
 }
 
 #search {
-  position: relative;
   height: 100vh;
-  width: 100vw;
+  position: relative;
 }
 
 #mainModel {
-  width: 100vw;
   height: 100vh;
-  position: absolute;
-  top: 0;
   z-index: 10;
   overflow: auto;
-  background-color: rgba(146, 219, 236, 1);
-  min-width: 1000px;
+  background-color: #bccece;
 }
 
 #mainModel::-webkit-scrollbar {
@@ -159,9 +181,10 @@ export default {
 }
 
 #searchModel {
-  width: 100vw;
+  width: 100%;
   height: 100vh;
-  background-color: #ffd3ca;
+  overflow: auto;
+  background-color: #bccece;
   position: absolute;
   top: 0;
   z-index: -10;
@@ -187,29 +210,29 @@ export default {
   width: 0px;
   height: 120px;
   border: none;
-  border-bottom: 5px solid #cf8095;
-  color: #cf8095;
+  border-bottom: 5px solid #8c9ba0;
+  color: #8c9ba0;
   background: transparent;
   font-size: 100px;
   transition: width 0.5s;
-  font-family: 方正粗黑宋简体;
+  font-family: Impact;
 }
 
 #inputModel {
   text-align: center;
-  margin-top: 100px;
+  margin-top: 200px;
 }
 
 #input-model-input {
-  width: 80%;
+  width: 100%;
   height: 120px;
   border: none;
-  border-bottom: 5px solid #80788f;
-  color: #80788f;
+  border-bottom: 5px solid #8c9ba0;
+  color: #8c9ba0;
   background: transparent;
   font-size: 100px;
   transition: width 0.5s;
-  font-family: 方正粗黑宋简体;
+  font-family: Impact;
 }
 
 .search-input-show {
@@ -223,7 +246,7 @@ export default {
 .alert {
   font-size: 20px;
   margin: 0 auto;
-  color: #cf8095;
+  color: #8c9ba0;
   margin-top: 20px;
   transition: transform 1s;
   font-family: Impact;
@@ -242,7 +265,7 @@ export default {
   margin-top: 20px;
   transition: transform 1s;
   font-family: Impact;
-  width: 80%;
+  margin-right: 50px;
   text-align: right;
 }
 
@@ -265,8 +288,10 @@ export default {
 }
 
 #resultModel {
-  width: 80%;
   margin: 0 auto;
+  margin-left: 50px;
+  margin-right: 50px;
+  margin-top: 50px;
 }
 
 #picModel {
@@ -277,28 +302,67 @@ export default {
 
 #searchResult {
   font-size: 18px;
-  color: #8d8091;
+  color: #666;
   font-weight: bold;
+  margin-bottom: 20px;
+  text-align: left;
+  height: 30px;
+  line-height: 30px;
+  display: flex;
+  align-items: center;
+}
+
+
+
+#searchResult img{
+  width: 25px;
+  height: 25px;
+  margin-right: 5px;
+}
+
+#searchResult span:hover{
+  cursor: pointer;
+  filter: brightness(130%)
+}
+
+
+.pic-router{
+  width: 25%;
   margin-bottom: 20px;
 }
 
 .pic {
-  width: 25%;
-  height: 400px;
-  margin: 5px;
-  border-radius: 6px;
+  width: 100%;
+  height: 300px;
+  border-radius: 4px;
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
-  margin-bottom: 20px;
   overflow: hidden;
   position: relative;
-  transition: transform 0.2s;
   cursor: pointer;
+  z-index: 1;
+}
+
+.pic::before {
+  transition: opacity 0.5s ease;
+  bottom: 0;
+  content: "";
+  display: block;
+  height: 100%;
+  left: 0;
+  opacity: 0.3;
+  position: absolute;
+  width: 100%;
+  z-index: 2;
+  background-color: #bccece;
+}
+
+.pic:hover::before {
+  opacity: 0;
 }
 
 .pic:hover {
-  transform: scale(1.05)
 }
 
 .infor-box {
@@ -309,14 +373,33 @@ export default {
   bottom: 0;
   left: -100%;
   transition: left 0.5s;
+  z-index: 3;
 }
 
-.infor-box p{
+.infor-box p {
   margin-bottom: 5px;
-  background: #fff;
+  background: #38646f;
   width: auto;
-  padding-left: 4px;
-  padding-right:4px;
+  padding-left: 6px;
+  padding-right: 6px;
   text-align: center;
+  color: #fff;
+  border-radius: 1px;
+}
+
+#nothing-box img {
+  width: 30px;
+  height: 30px;
+  margin-right: 10px;
+}
+
+#nothing-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 150px;
+  font-size: 18px;
+  color: #38646f;
 }
 </style>

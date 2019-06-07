@@ -1,269 +1,193 @@
 <template>
-  <el-row id="main-container">
-    <el-col :span="10" id="background">
-      <img src="/static/homepage.jpg" alt>
-    </el-col>
-    <el-col :span="14" id="login-reg">
-      <p id="title">24Frames</p>
-      <p class="sentence">You know some birds are not meant to be caged</p>
-      <p class="sentence">their feathers are just too bright</p>
-      <p id="button-p">
-        <a class="login-button" :class="{btnactivate:loginActivate}" @click="activateLogin">登录</a>
-        <a class="login-button" :class="{btnactivate:regActivate}" @click="activateReg">注册</a>
-      </p>
-      <div id="login" v-show="loginActivate">
-        <p>
-          <el-tooltip v-model="emailLogin" placement="right" content="请输入邮箱">
-            <input type="text" class="input" placeholder="Email" v-model="emailL">
-          </el-tooltip>
-        </p>
-        <p>
-          <el-tooltip v-model="passwordLogin" placement="right" content="请输入密码">
-            <input type="password" class="input" placeholder="Password" v-model="passwordL">
-          </el-tooltip>
-        </p>
-        <p>
-          <button v-loading="loading" class="button-normal" @click="login">登录</button>
-        </p>
-      </div>
+  <div id="out-container">
+    <div
+      id="main-container"
+      class="blur"
+      :style="backImg"
+      v-loading="loading"
+      element-loading-background="rgba(0, 0, 0, 0.8)"
+    >
+      <div id="cover"></div>
+      <common-header style="position:absolute;top:0" @showMenu="toShowMenu"></common-header>
 
-      <div id="register" v-show="regActivate">
-        <p>
-          <el-tooltip v-model="usernameReg" placement="right" content="请输入用户名">
-            <input type="text" class="input" placeholder="Username" v-model="usernameR">
-          </el-tooltip>
-        </p>
-        <p>
-          <el-tooltip v-model="emailReg" placement="right" content="请输入邮箱">
-            <input type="text" class="input" placeholder="Email" v-model="emailR">
-          </el-tooltip>
-        </p>
-        <p>
-          <el-tooltip v-model="passwordReg" placement="right" content="请输入密码">
-            <input type="password" class="input" placeholder="Password" v-model="passwordR">
-          </el-tooltip>
-        </p>
-        <p>
-          <button class="button-normal" @click="register">注册</button>
-        </p>
+      <movie-pic-list ref="moviePicList" :movies="movies" v-on:changeBack="setBack"></movie-pic-list>
+
+      <div class="control">
+        <img class="icon" src="/static/details.png" @click="showMEB">
+        <img class="icon" src="/static/left.png" @click="pageUp">
+        <img class="icon" src="/static/right.png" @click="pageDown">
       </div>
-    </el-col>
-  </el-row>
+      <div class="detail">
+        <p class="title">{{backMovie.title}}</p>
+        <p class="date">{{backMovie.date}}</p>
+        <p class="description">{{backMovie.description}}</p>
+      </div>
+    </div>
+
+    <evaluation-box ref="evaluation" :backMovie="backMovie"></evaluation-box>
+    <header-menu ref="menu"></header-menu>
+  </div>
 </template>
 
-
 <script>
+import CommonHeader from "@/components/CommonHeader";
+import MoviePicList from "@/components/MoviePicList";
+import EvaluationBox from "@/components/EvaluationBox";
+import HeaderMenu from "@/components/HeaderMenu";
 import axios from "axios";
-import global from '@/global/index.js'
-
+import global from "@/global/index.js";
 
 export default {
-  name: "Homepage",
+  name: "Movies",
   data() {
     return {
-      loading:false,
-
-      loginActivate: true,
-      regActivate: false,
-      emailLogin: false,
-      passwordLogin: false,
-      emailReg: false,
-      usernameReg: false,
-      passwordReg: false,
-
-      emailL: "",
-      passwordL: "",
-      usernameR: "",
-      emailR: "",
-      passwordR: "",
-
-      emailRegExp: new RegExp(/^\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$/)
+      page: 1,
+      movieSize: 0,
+      pages: 0,
+      pics: [],
+      backMovie: {},
+      showedMEB: false,
+      movies: [],
+      activateNode: {},
+      loading: true
     };
   },
+  components: {
+    CommonHeader,
+    MoviePicList,
+    EvaluationBox,
+    HeaderMenu
+  },
   methods: {
-    activateLogin() {
-      this.loginActivate = true;
-      this.regActivate = false;
+    toShowMenu() {
+      this.$refs.menu.showMenu();
     },
-    activateReg() {
-      this.loginActivate = false;
-      this.regActivate = true;
+    showMEB() {
+      this.$refs.evaluation.showMEB();
     },
-    login() {
-      if (this.emailL == "" || !this.emailRegExp.test(this.emailL)) {
-        this.emailLogin = true;
-        return;
-      } else if (this.passwordL == "") {
-        this.passwordLogin = true;
-        return;
-      } else {
-        this.loading = true
-        let param = new URLSearchParams()
-        param.append('email',this.emailL)
-        param.append('password',this.passwordL)
-        axios.post(  global.baseURL + "/login",param)
-        .then(response => {
-          if(response.data == 'User Not Existed'){
-            this.$message.error('该用户不存在')
-            this.loading = false
-          }else if(response.data == 'Login Succeed'){
-            this.$message.success('登录成功')
-            this.$router.push('/movies')
-          }
-        }).catch(err => {
-          console.log(err)
-        })
-      }
+    setBack(back) {
+      this.backMovie = back;
     },
-    register() {
-      if (this.usernameR == "") {
-        this.usernameReg = true;
-        return;
-      } else if (this.emailR == "" || !this.emailRegExp.test(this.emailR)) {
-        this.emailReg = true;
-        return;
-      } else if (this.passwordR == "") {
-        this.passwordReg = true;
-        return;
-      } else {
-        let param = new URLSearchParams()
-        param.append('username',this.usernameR)
-        param.append('email',this.emailR)
-        param.append('password',this.passwordR)
-        axios
-          .post( global.baseURL + "/register", param)
-          .then(response => {
-            if(response.data == 'Succeed'){
-              this.$message.success('注册成功')
-              this.loginActivate = true;
-              this.regActivate = false;
-            }else if(response.data == 'User Existed'){
-              this.$message.error('该用户已存在')
-            }
-          })
-          .catch(err => {
-            console.log(err);
-          });
-      }
+    pageUp() {
+      this.loading = true;
+      this.$refs.moviePicList.removeActivateNode();
+      this.page--;
+      if (this.page <= 0) this.page = this.pages;
+      axios.get(global.baseURL + "/movies?page=" + this.page).then(response => {
+        this.loading = false;
+        this.movies = response.data.data;
+        this.backMovie = this.movies[0];
+      });
+    },
+    pageDown() {
+      this.loading = true;
+      this.$refs.moviePicList.removeActivateNode();
+      this.page++;
+      if (this.page > this.pages) this.page = 1;
+      axios.get(global.baseURL + "/movies?page=" + this.page).then(response => {
+        this.loading = false;
+        this.movies = response.data.data;
+        this.backMovie = this.movies[0];
+      });
+    },
+    getData() {
+      axios.get(global.baseURL + "/size").then(response => {
+        this.movieSize = response.data.size;
+        this.pages = parseInt(this.movieSize / 6) + 1;
+      });
+
+      axios.get(global.baseURL + "/movies?page=1").then(response => {
+        this.loading = false;
+        this.movies = response.data.data;
+        this.backMovie = this.movies[0];
+      });
     }
+  },
+  computed: {
+    backImg() {
+      return "background-image:url('" + this.backMovie.url + "')";
+    }
+  },
+  mounted() {
+    this.getData()
+    
   }
 };
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped lang="scss">
-#login-reg {
+* {
+  margin: 0px;
+  padding: 0px;
+}
+
+#out-container {
+  position: relative;
+}
+
+#main-container {
   height: 100vh;
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-
-  #title {
-    color: #026b72;
-    font-size: 40px;
-    font-family: Bahnschrift Condensed;
-    font-weight: bold;
-    margin-bottom: 10px;
-  }
-
-  .sentence {
-    margin: 3px auto;
-    font-size: 13px;
-    font-weight: 100;
-  }
+  flex-direction: column-reverse;
+  position: relative;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
 }
 
-.login-button {
-  color: #000;
-  border: none;
-  background: none;
-  padding: 0;
-  border-bottom: 2px solid #e8e8e8;
-  padding-bottom: 10px;
-  font-weight: 300;
-  margin-right: 20px;
+#cover {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
 }
 
-.login-button:hover {
-  cursor: pointer;
+.detail {
+  width: 650px;
+  z-index: 0;
+  margin-left: 50px;
 }
 
-.btnactivate {
-  border-bottom: 2px solid #0092fe;
-  font-weight: bold;
-}
-
-#button-p {
-  margin-top: 20px;
-  margin-bottom: 30px;
-}
-
-.input {
-  width: 300px;
-  height: 22px;
-  padding: 9px 20px;
-  border-radius: 6px;
-  border: none;
-  background: #f7f7f7;
-  color: #000;
-}
-
-.input:hover {
-  background: #eee;
-}
-
-.input:focus {
-  outline: 0;
-  background: #eee;
-}
-
-p {
-  width: 350px;
-  margin: 0 auto;
+.control {
+  width: 200px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  margin-left: 50px;
   margin-bottom: 20px;
 }
 
-.button-normal {
-  background: #4a91a3;
-  font-weight: bold;
+.description {
   color: #fff;
-  border: none;
-  border-radius: 5px;
-  font-size: 15px;
-  padding: 10px 30px;
-  cursor: pointer;
+  font-size: 14px;
+  font-family: 微软雅黑 Light;
+  margin-bottom: 20px;
 }
 
-.button-normal:active {
-  background: #38646d;
+.date {
+  color: #cea5c7;
+  font-size: 20px;
+  font-family: 微软雅黑 Light;
+  margin-bottom: 10px;
 }
 
-.button-normal:focus {
-  outline: 0;
+.title {
+  font-size: 30px;
+  font-family: Segoe UI Black;
+  color: #fff;
+  margin-bottom: 10px;
 }
 
-@media screen and (max-width: 900px) {
-  #login-reg {
-    width: 100%;
-  }
-
-  #background {
-    width: 0;
-  }
-
-  #background img {
-    width: 0;
-  }
+.icon {
+  width: 30px;
+  height: 30px;
+  transition: transform 0.1s;
+  filter: brightness(70%);
 }
 
-#background {
-  box-sizing: border-box;
-  overflow: hidden;
-
-  img {
-    height: 100vh;
-    width: auto;
-    vertical-align: bottom;
-  }
+.icon:hover {
+  filter: brightness(150%);
+  transform: scale(1.1);
 }
 </style>

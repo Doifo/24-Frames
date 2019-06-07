@@ -1,7 +1,12 @@
 <template>
   <div id="pic-container">
-    <div class="pic-box" v-for="(movie,index) in movies" :key="index">
-      <img :src="movie.url" class="pic" @click="setBackground($event,index)">
+    <div
+      class="pic-box"
+      v-for="(movie,index) in movies"
+      :key="index"
+      @click="setBackground($event,index)"
+    >
+      <img :src="movie.url" class="pic">
       <p class="selected">SELECTED</p>
     </div>
   </div>
@@ -17,6 +22,13 @@ export default {
   },
   props: {
     movies: Array
+  },
+  computed: {
+    imgUrl() {
+      return function(url) {
+        return "background-image:url('" + url + "')";
+      };
+    }
   },
   methods: {
     setBackground(e, index) {
@@ -59,19 +71,42 @@ export default {
             img.style.left = `-${offset}px`;
           } else {
             let offset = (img.offsetHeight - height) / 2;
-            img.style.top = `-${offset}px`; 
+            img.style.top = `-${offset}px`;
           }
         };
       }
+    },
+    picSizeMatch2(imgs, width, height) {
+      for (let img of imgs) {
+        img.classList.remove("pic-change");
+        img.style.left = 0;
+        img.style.top = 0;
+        let offsetHeight = img.offsetHeight;
+        if (offsetHeight < height) {
+          // img.style.height = "100%";
+          // img.style.width = "auto";
+          img.classList.add("pic-change");
+
+          let offset = (img.offsetWidth - width) / 2;
+          img.style.left = `-${offset}px`;
+        } else {
+          let offset = (img.offsetHeight - height) / 2;
+          img.style.top = `-${offset}px`;
+        }
+      }
     }
   },
-  mounted() {},
+  mounted() {
+    window.onresize = () => {
+      let box = document.getElementsByClassName("pic-box")[0];
+      this.picSizeMatch2(this.pics, box.offsetWidth, box.offsetHeight);
+    };
+  },
   updated() {
-    console.log("update");
     this.pics = document.getElementsByClassName("pic");
     let box = document.getElementsByClassName("pic-box")[0];
     this.activateNode = box;
-    this.removeActivateNode()
+    this.removeActivateNode();
     this.setActivateNode(this.activateNode);
     this.picSizeMatch(this.pics, box.offsetWidth, box.offsetHeight);
     //this.picSizeMatch(this.pics, 240, 130);
@@ -101,6 +136,9 @@ export default {
   position: relative;
   border-radius: 6px;
   margin: 3px;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
 }
 
 .picBoxActivate {
@@ -129,7 +167,7 @@ export default {
   position: absolute;
   vertical-align: bottom;
   cursor: pointer;
-  transition: transform 0.5s;
+  transition: transform 0.2s;
 }
 
 .pic-change {
