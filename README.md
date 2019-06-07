@@ -74,7 +74,7 @@
 
 **github**
 
-<https://github.com/Doifo/24Frames>
+<https://github.com/Doifo/24-Frames>
 
 **访问链接**
 
